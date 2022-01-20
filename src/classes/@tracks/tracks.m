@@ -60,10 +60,18 @@ classdef tracks < classHandling & unitProps & plotProps
             'CVE2',... % weight second principal component
             'wEV1',... % normalized weight first principal component
             'EV1angle',... % angle between first and second principal component [degree]
-            'voronoiSA'... % area of the Voronoi surface
+            'voronoiSA',... % area of the Voronoi surface
+            'DensityOfPointsK1'... %Density of points Divided by mean Desnity of points calculated with K=2 
+            'DensityOfPointsR',... %Density of points Divided by mean Desnity of points calculated as amount of points within 2*LocError
+            'FractionOfImmobileSteps',...
+            'NImmobileSteps',...
+            'MeanAdsorptionTime',...
+            'MeanFlightTime',...
+            'AdsorptionFligthTimeRatio'...
             };
         % cell with property names that have to be computed
         resolution = 10; % resolution of the entropy
+        DisplacementThreshold=2.3; % displacement threshold to identify immobile steps 
     end
     
     % output properties
