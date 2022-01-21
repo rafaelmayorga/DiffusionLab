@@ -491,6 +491,7 @@ if any(ismember(thisFeatures,do))
         error('Number of dimensions is %i for population %i. property cannot be computed.',nDim,ii)
     end
     
+    
     % get squared displacements of individual tracks
         for jj=1:obj(ii).nTracks
             dummyCoords=obj(ii).coords{jj, 1};
@@ -659,6 +660,54 @@ end
         
     end
     
+    %% Distance to closet adsorbed particle 
+    
+    thisFeatures = {'DistanceToClosestAdsorbedParticle'};
+    if any(ismember(thisFeatures,do))
+        if nDim < 2
+            error('Number of dimensions is %i for population %i. property cannot be computed.',nDim,ii)
+        end
+        
+        
+        % How many videos in dataset? 
+       Datapaths=unique(obj(ii).TrackPath); %names of unique dataset paths 
+       DistanceToClosestAdsorbedParticle=NaN(obj(ii).nTracks,1); %initialize property
+      %find tracks that belong to the same path 
+      
+      if numel(Datapaths) ==1 %if there is only one video 
+          FullyImmobileIndex=obj(ii).features.FractionOfImmobileSteps==100; %find fully immobile tracks
+          try % segment function doesn't work if there is nothing to segment 
+              objImmobile=obj(ii).segment(FullyImmobileIndex); %segment immobile tracks
+              FullyAdsorbedCoords=objImmobile.features.CenterOfMass; %get centers of mass of immobile tracks 
+              COM_Tracks=obj(ii).features.CenterOfMass; % get centers of mass of other tracks 
+              [~,r] = knnsearch(FullyAdsorbedCoords,COM_Tracks,'K',1); % for each track find the closest immobile track
+          catch % if there are no immobile tracks set r=NaN
+              r=NaN(obj(ii).nTracks,1);
+          end
+          DistanceToClosestAdsorbedParticle=r;
+      else % if the number of paths (videos) is >1 consider only adsorbed particles within the same video 
+          for v=1:numel(Datapaths)
+              SamevideoIndex=strcmp(obj(ii).TrackPath,Datapaths(v)); % 1 if track belongs to same video, otherwise 0 
+              objSameVideo=obj(ii).segment(SamevideoIndex); %segment tracks that belong to the vth path
+              FullyImmobileIndex=objSameVideo.features.FractionOfImmobileSteps==100; %find immobile tracks within video
+              try % if there is nothing to segment there is an error 
+                  objSameVideoImmobile=objSameVideo.segment(FullyImmobileIndex); %segment tracks that belong to the same path
+                  FullyAdsorbedCoords=objSameVideoImmobile.features.CenterOfMass; %coords of immonbile Track within the video
+                  COM_Tracks=objSameVideo.features.CenterOfMass; %coords of tracks withing the video 
+                  [~,r] = knnsearch(FullyAdsorbedCoords,COM_Tracks,'K',1); %% for each track find the closest immobile track within the video 
+              catch %if there is nothing to segment (no immobile track) DistanceToClosestAdsorbedParticle=NaN
+                  r=NaN(objSameVideo.nTracks,1);
+              end
+              DistanceToClosestAdsorbedParticle(SamevideoIndex)=r;
+          end
+      end
+         
+     if ismember('DistanceToClosestAdsorbedParticle',do); T.DistanceToClosestAdsorbedParticle = DistanceToClosestAdsorbedParticle;...
+                T.Properties.VariableUnits{end} = 'Pixels'; T.Properties.VariableDescriptions{end} = 'MeanAdsorptionTime'; end         
+      
+    end
+   
+   % end
     %% Save
     
     % store features

@@ -68,6 +68,7 @@ out = tracks;
 out.coords = cat(1,obj.coords);
 out.time = cat(1,obj.time);
 out.features = cat(1,obj.features);
+out.TrackPath = cat(1,obj.TrackPath);
 out.doFeatures = obj(baseObj).doFeatures;
 out.resolution = obj(baseObj).resolution;
 out.segTree = obj(baseObj).segTree;
@@ -94,14 +95,13 @@ if shuffleFlag
     y = randsample(nTracksTot,nTracksTot);
     out.coords = out.coords(y);
     out.time = out.time(y);
+    out.TrackPath = out.TrackPath(y);
     if ~isempty(out.features); out.features = out.features(y,:); end
     if ~isempty(out.drift); out.drift = out.drift(y); end
     if ~isempty(out.MSD); out.MSD = out.MSD(y); end
 end
 
 varargout{1} = y;
-
-
 end
 
 

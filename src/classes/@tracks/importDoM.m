@@ -125,6 +125,7 @@ sigma_err_nm = cell(nTracks,1);
 intensity = cell(nTracks,1);
 state = cell(nTracks,1);
 r2fit = cell(nTracks,1);
+TrackPath= cell(nTracks,1);
 
 wb = waitbar(0,'Loading tracks...','Name','Please wait');
 
@@ -150,6 +151,7 @@ for ii = 1:nTracks
     state{ii} = csvout(take,18);
     intensity{ii} = csvout(take,19);
     r2fit{ii} = csvout(take,21);
+    TrackPath{ii}=csvpath;
 end
 
 % --- create object
@@ -160,6 +162,7 @@ T = table(trackID,coords_err,coords_err_nm,amp,amp_err,z0,sigma,sigma_nm,...
     sigma_err,sigma_err_nm,intensity,state,r2fit);
 obj.fitProps = T;
 obj.filepath = csvpath;
+obj.TrackPath=TrackPath;
 
 % obj.fitProps.coords_err = coords_err;
 % obj.fitProps.coords_err_nm = coords_err_nm;

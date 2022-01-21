@@ -67,11 +67,12 @@ classdef tracks < classHandling & unitProps & plotProps
             'NImmobileSteps',...
             'MeanAdsorptionTime',...
             'MeanFlightTime',...
-            'AdsorptionFligthTimeRatio'...
+            'AdsorptionFligthTimeRatio',...
+            'DistanceToClosestAdsorbedParticle'
             };
         % cell with property names that have to be computed
         resolution = 10; % resolution of the entropy
-        DisplacementThreshold=2.3; % displacement threshold to identify immobile steps 
+        DisplacementThreshold=2.3; % displacement threshold to identify immobile steps in pixels 
     end
     
     % output properties
@@ -136,6 +137,11 @@ classdef tracks < classHandling & unitProps & plotProps
     properties (Constant)
         TOLERANCE = 12;  % Tolerance for binning delays together. Two delays will be binned together if they differ in absolute value by less than 10^-TOLERANCE.
     end
+    
+    properties (SetAccess = public)
+    TrackPath 
+    end
+    
     
     % constructor function
     methods
