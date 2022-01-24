@@ -122,20 +122,20 @@ for ii = 1:nObj
         if ismember('nTrackPoints',do); T.nTrackPoints = obj(ii).nTrackPoints;...
                 T.Properties.VariableUnits{end} = ''; T.Properties.VariableDescriptions{end} = 'Number of Points'; end
     end
-            
+    
     
     %% Blinking
     
     thisFeatures = {'nTrackPointsAll','firstFrame','onFraction','blinkingRate',...
-           'OFFON','ONOFF'};
+        'OFFON','ONOFF'};
     
     if any(ismember(thisFeatures,do))
         if ~obj(ii).onTrace_valid
             obj(ii) = obj(ii).computeOnTrace;
         end
-
+        
         % preallocation
-
+        
         nTrackPointsAll = zeros(obj(ii).nTracks,1);
         firstFrame = zeros(obj(ii).nTracks,1);
         onFraction = zeros(obj(ii).nTracks,1);
@@ -143,7 +143,7 @@ for ii = 1:nObj
         OFFON = cell(obj(ii).nTracks,1);
         ONOFF = cell(obj(ii).nTracks,1);
         nTrackPoints = obj(ii).nTrackPoints;
-
+        
         % compute
         for jj = 1:obj(ii).nTracks
             nTrackPointsAll(jj)  =(obj(ii).time{jj}(end) - obj(ii).time{jj}(1) + 1);
@@ -162,7 +162,7 @@ for ii = 1:nObj
             else % is odd, ends on OFF
                 blinkingRate(jj) = floor(nShortZ/2)/nTrackPointsAll(jj);
             end
-
+            
             % testing
             oT = obj(ii).onTrace{jj};
             coT = cumsum(oT);
@@ -170,9 +170,9 @@ for ii = 1:nObj
             ONOFF{jj} = coT(1:2:end);
             OFFON{jj} = OFFON{jj}(OFFON{jj} < obj(ii).nFrames);
             ONOFF{jj} = ONOFF{jj}(ONOFF{jj} > 0);
-
+            
         end
-
+        
         % write to table as table
         if ismember('nTrackPointsAll',do); T.nTrackPointsAll = nTrackPointsAll;...
                 T.Properties.VariableUnits{end} = ''; T.Properties.VariableDescriptions{end} = 'Number of all points'; end
@@ -191,16 +191,16 @@ for ii = 1:nObj
     
     thisFeatures = {'MinBoundCircleRadius','MinBoundCircleCenter',...
         'CenterOfMass','MBCCminusCoM'};
-
+    
     if any(ismember(thisFeatures,do))
-
+        
         % preallocation
-
+        
         MinBoundCircleRadius = zeros(obj(ii).nTracks,1);
         MinBoundCircleCenter = zeros(obj(ii).nTracks,2);
         CenterOfMass = zeros(obj(ii).nTracks,2);
         MBCCminusCoM = zeros(obj(ii).nTracks,1);
-
+        
         % get the minimum bounding circle of the point cloud forming the
         % track (see: smallest-circle problem)
         
@@ -209,7 +209,7 @@ for ii = 1:nObj
         elseif nDim > 2
             warning('Number of dimensions is %i for population %i. MinBoundCircle, CenterOfMass, and MBCCminusCoM are computed in the XY-plane.',nDim,ii)
         end
-
+        
         for jj = 1:obj(ii).nTracks
             % --- minimum bounding circle 2D
             [C,R] = obj(ii).minboundcircle(obj(ii).coords{jj}(:,1),obj(ii).coords{jj}(:,2),1);
@@ -219,11 +219,11 @@ for ii = 1:nObj
             CenterOfMass(jj,:) = mean(obj(ii).coords{jj}(:,1:2),1); % take mean over all rows
             % get difference between CoM and center of minimum bounding circle
             % in percent; idea: if this difference is small the track is a
-            % 'ball of wool', if the difference is large it is an 'uncoiled ball of wool': 
+            % 'ball of wool', if the difference is large it is an 'uncoiled ball of wool':
             % in percent of MinBoundCircleRadius (i.e. between 0 to 1)
             MBCCminusCoM(jj) = pdist2(MinBoundCircleCenter(jj,1:2),CenterOfMass(jj,1:2))/R; % default value for pdist2 is Eucledian
         end
-
+        
         % write to table as table
         if ismember('MinBoundCircleRadius',do); T.MinBoundCircleRadius = MinBoundCircleRadius;...
                 T.Properties.VariableUnits{end} = 'pixelsize'; T.Properties.VariableDescriptions{end} = 'MBC radius'; end
@@ -233,14 +233,14 @@ for ii = 1:nObj
                 T.Properties.VariableUnits{end} = ''; T.Properties.VariableDescriptions{end} = 'Center of mass'; end
         if ismember('MBCCminusCoM',do); T.MBCCminusCoM = MBCCminusCoM;...
                 T.Properties.VariableUnits{end} = ''; T.Properties.VariableDescriptions{end} = 'MBCC minus CoM'; end
-
+        
     end
     
     waitbar(0.6/nObj+(ii-1)/nObj,wb,waitstr)
     %% Entropy
-        
+    
     thisFeatures = {'entropy'};
-
+    
     if any(ismember(thisFeatures,do))
         
         if nDim < 2
@@ -257,39 +257,39 @@ for ii = 1:nObj
         else
             % use embounding circle radius as width and height
             R = T.MinBoundCircleRadius;
-            CC = T.MinBoundCircleCenter;            
+            CC = T.MinBoundCircleCenter;
         end
-
+        
         % preallocation
         entropy_ = zeros(obj(ii).nTracks,1);
-
+        
         for jj = 1:obj(ii).nTracks
             % idea: make it a binary image and get the entropy of the track
             imgSize = (round(R(jj)*obj(ii).resolution)*2)+2;
             I = zeros(imgSize,imgSize);
             % now place the points of the track in this image:
-
+            
             relCoordX = uint8(round((obj(ii).coords{jj}(:,1) - (CC(jj,1)-R(jj)))*obj(ii).resolution)+1);
             relCoordY = uint8(round((obj(ii).coords{jj}(:,2) - (CC(jj,2)-R(jj)))*obj(ii).resolution)+1);
             I(sub2ind(size(I),relCoordY,relCoordX)) = 1; % avoid for loop
             entropy_(jj) = entropy(uint8(I));
         end
-
+        
         % write to table as table
         if ismember('entropy',do); T.entropy = entropy_;...
                 T.Properties.VariableUnits{end} = ''; T.Properties.VariableDescriptions{end} = 'Entropy'; end
-
+        
     end
     
     waitbar(0.8/nObj+(ii-1)/nObj,wb,waitstr)
     %% displacement
     
     thisFeatures = {'trackLength','tortuosity'};
-        
+    
     if any(ismember(thisFeatures,do))
-    
+        
         % preallocation
-    
+        
         trackLength = NaN(obj(ii).nTracks,1);
         tortuosity = NaN(obj(ii).nTracks,1);
         
@@ -304,14 +304,14 @@ for ii = 1:nObj
                 T.Properties.VariableUnits{end} = 'pixelsize'; T.Properties.VariableDescriptions{end} = 'Length'; end
         if ismember('tortuosity',do); T.tortuosity = tortuosity;...
                 T.Properties.VariableUnits{end} = ''; T.Properties.VariableDescriptions{end} = 'Tortuosity'; end
-    
+        
     end
     
     waitbar(0.9/nObj+(ii-1)/nObj,wb,waitstr)
     %% PCA
     
     thisFeatures = {'EVec1','EVec2','CVE1','CVE2','EV1angle'};
-        
+    
     if any(ismember(thisFeatures,do))
         
         if nDim < 2
@@ -319,21 +319,21 @@ for ii = 1:nObj
         elseif nDim > 2
             warning('Number of dimensions is %i for population %i. Elongation (angle) is computed in the XY-plane.',nDim,ii)
         end
-    
+        
         % preallocation
-    
+        
         EVec1 = NaN(obj(ii).nTracks,2);
         EVec2 = NaN(obj(ii).nTracks,2);
         CVE1 = NaN(obj(ii).nTracks,1);
         CVE2 = NaN(obj(ii).nTracks,1);
         EV1angle = NaN(obj(ii).nTracks,1);
-
+        
         % get the principal component of each track (direction of largest variance)
         for jj = 1:obj(ii).nTracks
             covM = cov(obj(ii).coords{jj}(:,1:2));
-            [V,D]=eig(covM);   
-
-            % correct all EVecs to be in positive half space: 
+            [V,D]=eig(covM);
+            
+            % correct all EVecs to be in positive half space:
             % => if the y-part of EVec1 is negative, flip it by 180deg
             if V(2,1)<0
                 V(2,1)=-V(2,1);
@@ -359,14 +359,14 @@ for ii = 1:nObj
             % get angle in degrees for each EVec1 (per definition:
             % angle between basis set vector [1 0] and EVec1)
             EV1angle(jj) = acosd(dot(EVec1(jj,:),[1 0])); % both vectors are of length 1
-
+            
         end
-
+        
         % compute normalized CVE1, which ranges from 0 to 1. In the 2D case,
         % CVE1 can be 1 (all points are on a line) or 0.5 (spherical cloud of
         % points). This scales 0.5-1 to 0-1.
         wEV1 = CVE1.*2 - 1;
-    
+        
         % write to table as table
         if ismember('EVec1',do); T.EVec1 = EVec1;...
                 T.Properties.VariableUnits{end} = ''; T.Properties.VariableDescriptions{end} = 'EVec1'; end
@@ -380,14 +380,14 @@ for ii = 1:nObj
                 T.Properties.VariableUnits{end} = ''; T.Properties.VariableDescriptions{end} = 'Elongation'; end
         if ismember('EV1angle',do); T.EV1angle = EV1angle;...
                 T.Properties.VariableUnits{end} = ''; T.Properties.VariableDescriptions{end} = 'Elongation angle'; end
-    
+        
     end
     
     waitbar(1/nObj+(ii-1)/nObj,wb,waitstr)
     %% Voronoi
     
     thisFeatures = {'voronoiSA'};
-        
+    
     if any(ismember(thisFeatures,do))
         
         if nDim < 2
@@ -406,7 +406,7 @@ for ii = 1:nObj
         
         % preallocation
         voronoiSA = zeros(size(COM,1),1);
-
+        
         % get the convex hull and extend it by 5 pixels; then add the hull points
         % to the data to cut of the voronoi diagram at the extended hull
         hPs = obj(ii).getHullPoints(COM,10);
@@ -416,22 +416,22 @@ for ii = 1:nObj
         
         for jj = 1:length(c)
             if all(c{jj}~=1)  % If at least one of the indices is 1,
-                              % then it is an open region and we can't
-                              % patch that. These are introduced as hull points
-                              % to create a convex hull in the voronoi diagram
-                 if jj<startOfhPs % only patch real data points
+                % then it is an open region and we can't
+                % patch that. These are introduced as hull points
+                % to create a convex hull in the voronoi diagram
+                if jj<startOfhPs % only patch real data points
                     voronoiSA(jj) = polyarea(v(c{jj},1),v(c{jj},2));
-                 end
+                end
             end
         end
-    
+        
         % write to table as table
         if ismember('voronoiSA',do); T.voronoiSA = voronoiSA;...
                 T.Properties.VariableUnits{end} = 'pixelsize.^2'; T.Properties.VariableDescriptions{end} = 'Voronoi area'; end
-    
+        
     end
     
-     %% Nearest Neighbor analysis
+    %% Nearest Neighbor analysis
     
     thisFeatures = {'DensityOfPointsK1','DensityOfPointsR'};
     
@@ -452,24 +452,24 @@ for ii = 1:nObj
             COM = T.CenterOfMass;
         end
         
-        [~,r] = knnsearch(COM,COM,'K',2); %distance to the 2 closest track centers of mass (1st is itself) 
+        [~,r] = knnsearch(COM,COM,'K',2); %distance to the 2 closest track centers of mass (1st is itself)
         DensityOfPointsK1 = 1./(pi*r(:,2).^2); %density= 1/circle area where r is distance to the closest track center of mass
-        DensityOfPointsK1=DensityOfPointsK1/obj(ii).nTracks; %divide point density by Number of Tracks 
-        %DensityOfPointsK1=DensityOfPointsK1/mean(DensityOfPointsK1); %divide point density by mean point density 
+        DensityOfPointsK1=DensityOfPointsK1/obj(ii).nTracks; %divide point density by Number of Tracks
+        %DensityOfPointsK1=DensityOfPointsK1/mean(DensityOfPointsK1); %divide point density by mean point density
         
         
         
-        %DensityOfPointsR density of points within circle with radius R normalized by number of tracks  
+        %DensityOfPointsR density of points within circle with radius R normalized by number of tracks
         R=obj(ii).DisplacementThreshold; % R is= Displacement Threshold
         AllPoints = COM;
         DensityOfPointsR = zeros(obj(ii).nTracks,1); %Initializing Variable
         for idx=1:length(AllPoints)
             Distances = sqrt( sum( (AllPoints-AllPoints(idx,:)).^2 ,2) );
             Ninside   = length( find(Distances<=R) );% number of points within each circle with radius R
-            DensityOfPointsR(idx) = Ninside/(pi*R.^2); 
+            DensityOfPointsR(idx) = Ninside/(pi*R.^2);
         end
-        DensityOfPointsR=DensityOfPointsR/obj(ii).nTracks; %Normalize density with number of Tracks 
-        %DensityOfPointsR=DensityOfPointsR/mean(DensityOfPointsR); %Normalize density with number of Tracks 
+        DensityOfPointsR=DensityOfPointsR/obj(ii).nTracks; %Normalize density with number of Tracks
+        %DensityOfPointsR=DensityOfPointsR/mean(DensityOfPointsR); %Normalize density with number of Tracks
         
         
         % T.CenterOfMass=COM;
@@ -480,37 +480,37 @@ for ii = 1:nObj
         
     end
     
-
-%% Immobile Seps fraction
-
-thisFeatures = {'FractionOfImmobileSteps','NImmobileSteps'};
-
-if any(ismember(thisFeatures,do))
     
-    if nDim < 2
-        error('Number of dimensions is %i for population %i. property cannot be computed.',nDim,ii)
-    end
+    %% Immobile Seps fraction
     
+    thisFeatures = {'FractionOfImmobileSteps','NImmobileSteps'};
     
-    % get squared displacements of individual tracks
+    if any(ismember(thisFeatures,do))
+        
+        if nDim < 2
+            error('Number of dimensions is %i for population %i. property cannot be computed.',nDim,ii)
+        end
+        
+        
+        % get squared displacements of individual tracks
         for jj=1:obj(ii).nTracks
             dummyCoords=obj(ii).coords{jj, 1};
             dR2{ii}{jj,1}=(diff(dummyCoords(:,1))).^2+(diff(dummyCoords(:,2))).^2;
         end
-    
-    for jj=1:obj(1,ii).nTracks
-        dummy=dR2{ii}{jj,1};
-        NImmobileSteps{ii}{jj,1}=numel(find(dummy<=obj(ii).DisplacementThreshold)); %number of steps below displacement trehesold
-        FractionOfImmobileSteps{ii}{jj,1}=NImmobileSteps{ii}{jj,1}/numel(dummy)*100; %fraction (%) of steps below displacement threshold
+        
+        for jj=1:obj(1,ii).nTracks
+            dummy=dR2{ii}{jj,1};
+            NImmobileSteps{ii}{jj,1}=numel(find(dummy<=obj(ii).DisplacementThreshold)); %number of steps below displacement trehesold
+            FractionOfImmobileSteps{ii}{jj,1}=NImmobileSteps{ii}{jj,1}/numel(dummy)*100; %fraction (%) of steps below displacement threshold
+        end
+        
+        
+        if ismember('FractionOfImmobileSteps',do); T.FractionOfImmobileSteps = cell2mat(FractionOfImmobileSteps{1,ii});...
+                T.Properties.VariableUnits{end} = ''; T.Properties.VariableDescriptions{end} = 'FractionOfImmobileSteps'; end
+        if ismember('NImmobileSteps',do); T.NImmobileSteps = cell2mat((NImmobileSteps{1,ii}));...
+                T.Properties.VariableUnits{end} = ''; T.Properties.VariableDescriptions{end} = 'NImmobileSteps'; end
     end
     
-    
-    if ismember('FractionOfImmobileSteps',do); T.FractionOfImmobileSteps = cell2mat(FractionOfImmobileSteps{1,ii});...
-            T.Properties.VariableUnits{end} = ''; T.Properties.VariableDescriptions{end} = 'FractionOfImmobileSteps'; end
-    if ismember('NImmobileSteps',do); T.NImmobileSteps = cell2mat((NImmobileSteps{1,ii}));...
-            T.Properties.VariableUnits{end} = ''; T.Properties.VariableDescriptions{end} = 'NImmobileSteps'; end
-end
-
     %% Adsorption Time Analysis
     thisFeatures = {'MeanAdsorptionTime','MeanFlightTime','AdsorptionFligthTimeRatio'};
     if any(ismember(thisFeatures,do))
@@ -644,13 +644,13 @@ end
             AdsFlightRatio{ii}(jj)=MeanAdsorptionTimes{ii}(jj)./MeanFlightTimes{ii}(jj);
         end
         
-        %convert proerties to mat formsat to fit in table 
+        %convert proerties to mat formsat to fit in table
         MeanAdsorptionTime=((MeanAdsorptionTimes{1,ii}))';
         MeanFlightTime=((MeanFlightTimes{1,ii}))';
         AdsorptionFligthTimeRatio=((AdsFlightRatio{1,ii}))';
         
         
-
+        
         if ismember('MeanAdsorptionTime',do); T.MeanAdsorptionTime = MeanAdsorptionTime;...
                 T.Properties.VariableUnits{end} = 's'; T.Properties.VariableDescriptions{end} = 'MeanAdsorptionTime'; end
         if ismember('MeanFlightTime',do); T.MeanFlightTime = MeanFlightTime;...
@@ -706,8 +706,8 @@ end
                 T.Properties.VariableUnits{end} = 'Pixels'; T.Properties.VariableDescriptions{end} = 'MeanAdsorptionTime'; end
         
     end
-   
-   % end
+    
+    % end
     %% Save
     
     % store features
@@ -724,15 +724,15 @@ end
 %Template:
 %
 % thisFeatures = {};
-%     
+%
 % if any(ismember(thisFeatures,do))
-% 
+%
 %     % preallocation
-% 
-% 
-% 
+%
+%
+%
 %     % write to table as table
 %     if ismember('clear',do); T.nTrackPointsAll = nTrackPointsAll; end
-% 
+%
 % end
 

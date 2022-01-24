@@ -140,6 +140,8 @@ classdef tracks < classHandling & unitProps & plotProps
     
     properties (SetAccess = public)
     TrackPath 
+    AdsorptionTimes
+    FlightTimes
     end
     
     
